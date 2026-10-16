@@ -155,8 +155,8 @@ tension_v = st.sidebar.number_input("Tension Nominal [V]", value=tension_def, st
 tipo_carga = st.sidebar.selectbox("Tipo de Carga", ["Motor / Carga Inductiva (Factor 1.25)", "Alimentador General (Factor 1.00)"])
 factor_seg = 1.25 if "Motor" in tipo_carga else 1.00
 
-# Actualizacion: Unidades en kW, HP o Corriente Directa
-unidad_pot = st.sidebar.radio("Unidad de Potencia / Carga", ["Potencia Activa [kW]", "Potencia Mecanica [HP]", "Corriente Directa [A]"])
+# Opciones profesionales de ingreso de potencia
+unidad_pot = st.sidebar.radio("Unidad de Potencia / Carga", ["Potencia Activa [kW]", "Potencia Mecanica [HP]", "Corriente de Carga Directa [A]"])
 if unidad_pot == "Potencia Activa [kW]":
     kw_in = st.sidebar.number_input("Potencia Activa [kW]", value=18.5, step=0.5)
     potencia_w = kw_in * 1000.0
@@ -164,7 +164,7 @@ elif unidad_pot == "Potencia Mecanica [HP]":
     hp_in = st.sidebar.number_input("Potencia Mecanica [HP]", value=20.0, step=0.5)
     potencia_w = hp_in * 745.7
 else:
-    i_directa = st.sidebar.number_input("Corriente [A]", value=35.0, step=1.0)
+    i_directa = st.sidebar.number_input("Corriente de Carga [A]", value=35.0, step=1.0)
 
 cos_phi = st.sidebar.slider("Factor de Potencia (cos phi)", 0.50, 1.00, 0.85, 0.01)
 rendimiento = st.sidebar.slider("Rendimiento (eta)", 0.60, 1.00, 0.92 if "Motor" in tipo_carga else 1.00, 0.01)
@@ -172,7 +172,7 @@ rendimiento = st.sidebar.slider("Rendimiento (eta)", 0.60, 1.00, 0.92 if "Motor"
 st.sidebar.subheader("Condiciones de Instalacion")
 longitud_m = st.sidebar.number_input("Longitud de Canalizacion [m]", value=55.0, step=5.0)
 
-# Actualizacion: Porcentaje de caída automático según normativa RIC SEC
+# Porcentaje de caída automático según normativa RIC SEC
 tipo_tramo = st.sidebar.selectbox(
     "Nivel / Tramo del Circuito (Normativa RIC)",
     [
@@ -191,7 +191,7 @@ n_agrup = st.sidebar.selectbox("Circuitos Agrupados", list(FACTORES_AGRUPAMIENTO
 curva_itm = st.sidebar.selectbox("Curva Proteccion", ["Curva C (General)", "Curva D (Motores)"])
 
 # --- COMPUTOS ---
-if unidad_pot == "Corriente Directa [A]":
+if unidad_pot == "Corriente de Carga Directa [A]":
     ib = i_directa
     id_diseno = ib * factor_seg
     k_pot = np.sqrt(3.0) if "Trifasico" in sistema else 1.0
@@ -390,10 +390,11 @@ with tab2:
         story.append(Spacer(1, 4))
         
         # Parámetros de Operación
+        potencia_reporte = f"{potencia_w/1000.0:.2f} kW" if unidad_pot != "Corriente de Carga Directa [A]" else f"{ib:.2f} A (Medido)"
         story.append(Paragraph("PARAMETROS DE DISEÑO Y OPERACION", style_section_title))
         data_params = [
             [Paragraph("<b>Sistema Electrico:</b>", style_body), Paragraph(sistema, style_body), Paragraph("<b>Tension Nominal:</b>", style_body), Paragraph(f"{tension_v:.1f} V", style_body)],
-            [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(f"{potencia_w/1000.0:.2f} kW ({unidad_pot})", style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
+            [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(potencia_reporte, style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
             [Paragraph("<b>Corriente Empleo (I_B):</b>", style_body), Paragraph(f"{ib:.2f} A", style_body), Paragraph("<b>Corriente Diseño (I_d):</b>", style_body), Paragraph(f"{id_diseno:.2f} A", style_body)],
             [Paragraph("<b>Longitud Canalizacion:</b>", style_body), Paragraph(f"{longitud_m:.1f} m", style_body), Paragraph("<b>Material Conductor:</b>", style_body), Paragraph(f"{material} ({temp_aislacion})", style_body)],
         ]
