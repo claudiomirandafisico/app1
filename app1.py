@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import io
 
-# Importaciones para generacion de PDF con formato de informe tecnico oficial
+# Importaciones para generacion de PDF con formato de informe tecnico oficial estilo Dictuc
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilo CSS de Ingenieria / Tecnico Profesional
+# Estilo CSS Empresarial / Tecnico Profesional
 st.markdown("""
 <style>
     .stApp {
@@ -307,25 +307,39 @@ with tab2:
 
     fecha_emision = datetime.now().strftime("%Y-%m-%d %H:%M")
     n_informe = f"IE-{datetime.now().strftime('%Y%m%d')}-01"
+    codigo_verif = f"v{np.random.randint(100000, 999999)}x"
 
     def generar_pdf_informe_tecnico():
         buffer = io.BytesIO()
+        
+        # Funcion personalizada de canvas para el pie de pagina estilo Dictuc
+        def add_footer(canvas, doc):
+            canvas.saveState()
+            canvas.setFont('Helvetica', 7.5)
+            canvas.setFillColor(colors.HexColor('#475569'))
+            footer_text = f"Para verificar este documento ingrese a sistema // Codigo de verificacion: {codigo_verif} — Página {doc.page} de 1"
+            canvas.drawString(40, 25, footer_text)
+            canvas.setStrokeColor(colors.HexColor('#CBD5E1'))
+            canvas.setLineWidth(0.5)
+            canvas.line(40, 37, 574, 37)
+            canvas.restoreState()
+
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
             rightMargin=40, leftMargin=40,
-            topMargin=40, bottomMargin=40
+            topMargin=40, bottomMargin=50
         )
         
         styles = getSampleStyleSheet()
         
         style_header_title = ParagraphStyle('HeaderTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#0F172A'), alignment=TA_LEFT)
         style_header_meta = ParagraphStyle('HeaderMeta', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11, textColor=colors.HexColor('#475569'), alignment=TA_RIGHT)
-        style_heading = ParagraphStyle('SecHeading', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9.5, leading=12, textColor=colors.HexColor('#1E293B'), spaceBefore=8, spaceAfter=4)
+        style_heading = ParagraphStyle('SecHeading', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9, leading=12, textColor=colors.white, spaceBefore=4, spaceAfter=4)
         style_body = ParagraphStyle('DocBody', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=11, textColor=colors.HexColor('#0F172A'))
         style_table_text = ParagraphStyle('TableText', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, leading=9.5, textColor=colors.HexColor('#0F172A'))
         style_table_header = ParagraphStyle('TableHeader', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=7.5, leading=9.5, textColor=colors.white, alignment=TA_CENTER)
-        style_obs = ParagraphStyle('ObsText', parent=styles['Normal'], fontName='Helvetica-Oblique', fontSize=7.5, leading=10, textColor=colors.HexColor('#334155'))
+        style_obs = ParagraphStyle('ObsText', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, leading=10, textColor=colors.HexColor('#334155'))
         
         story = []
         
@@ -343,8 +357,8 @@ with tab2:
         story.append(Spacer(1, 4))
         story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=6))
         
-        # Bloque de Identificación y Metadatos del Solicitante / Proyecto
-        story.append(Paragraph("<b>1. IDENTIFICACION DEL PROYECTO Y SOLICITUD</b>", style_heading))
+        # Identificación del Proyecto (Estilo tabla de metadatos de ensayo)
+        story.append(Paragraph("<b>IDENTIFICACION DEL SOLICITANTE Y PROYECTO</b>", ParagraphStyle('SecBox', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
         data_id = [
             [Paragraph("<b>Identificador / Tag:</b>", style_body), Paragraph(id_circuito, style_body), Paragraph("<b>Normativa Aplicada:</b>", style_body), Paragraph("RIC SEC / IEC 60364", style_body)],
             [Paragraph("<b>Especialista Responsable:</b>", style_body), Paragraph("Claudio Andrés Miranda Obreque", style_body), Paragraph("<b>Calificacion:</b>", style_body), Paragraph("Instalador SEC Clase D, Est. Física", style_body)],
@@ -361,8 +375,8 @@ with tab2:
         story.append(t_id)
         story.append(Spacer(1, 6))
         
-        # Bloque de Parámetros Operacionales
-        story.append(Paragraph("<b>2. PARAMETROS DE DISEÑO Y OPERACION</b>", style_heading))
+        # Parámetros Operacionales
+        story.append(Paragraph("<b>PARAMETROS DE DISEÑO Y OPERACION</b>", ParagraphStyle('SecBox2', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
         data_params = [
             [Paragraph("<b>Sistema Electrico:</b>", style_body), Paragraph(sistema, style_body), Paragraph("<b>Tension Nominal:</b>", style_body), Paragraph(f"{tension_v:.1f} V", style_body)],
             [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(f"{potencia_w/1000.0:.2f} kW", style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
@@ -381,8 +395,8 @@ with tab2:
         story.append(t_params)
         story.append(Spacer(1, 6))
         
-        # Bloque de Resultados del Ensayo / Cálculo
-        story.append(Paragraph("<b>3. RESULTADOS DE VERIFICACION Y DIMENSIONAMIENTO</b>", style_heading))
+        # Resultados de Verificación
+        story.append(Paragraph("<b>RESULTADOS DE VERIFICACION Y DIMENSIONAMIENTO TECNICO</b>", ParagraphStyle('SecBox3', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
         data_results = [
             [Paragraph("<b>Parametro Tecnico Evaluado</b>", style_table_header), Paragraph("<b>Valor Obtenido</b>", style_table_header), Paragraph("<b>Criterio / Estatus Normativo</b>", style_table_header)],
             [Paragraph("Calibre de Proteccion (I_n)", style_table_text), Paragraph(f"{in_itm} A ({curva_itm})", style_table_text), Paragraph("Conforme (I_n >= I_d)", style_table_text)],
@@ -403,12 +417,12 @@ with tab2:
         story.append(t_results)
         story.append(Spacer(1, 6))
         
-        # Bloque de Observaciones Asociadas al Servicio / Normativa
-        story.append(Paragraph("<b>4. OBSERVACIONES ASOCIADAS AL ESTUDIO</b>", style_heading))
+        # Observaciones Asociadas al Servicio
+        story.append(Paragraph("<b>OBSERVACIONES ASOCIADAS AL SERVICIO</b>", ParagraphStyle('SecBox4', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
         obs_text = (
-            "1. Los resultados expuestos son válidos exclusivamente para el circuito y los parámetros operacionales declarados por el mandante.<br/>"
+            "1. Los resultados expuestos son válidos exclusivamente para el circuito y los parámetros operacionales declarados.<br/>"
             "2. El dimensionamiento verifica estrictamente la capacidad térmica de transporte de corriente ($I_Z' \\ge I_n$) y la regulación de tensión máxima permitida en baja tensión.<br/>"
-            "3. Estudio desarrollado bajo los estándares de competencia técnica en instalaciones eléctricas y física aplicada."
+            "3. Estudio desarrollado bajo los estándares técnicos vigentes por especialista calificado."
         )
         t_obs = Table([[Paragraph(obs_text, style_obs)]], colWidths=[534])
         t_obs.setStyle(TableStyle([
@@ -420,10 +434,10 @@ with tab2:
         story.append(t_obs)
         story.append(Spacer(1, 10))
         
-        # Bloque de Firmas y Responsable Técnico
+        # Firmas y Responsable
         sig_data = [
-            [Paragraph("<b>Elaborado y Validado por:</b><br/><br/><br/><b>Claudio Andrés Miranda Obreque</b><br/>Instalador SEC Clase D, Est. Física", style_body),
-             Paragraph("<b>Aprobación / V° B°:</b><br/><br/><br/>___________________________________<br/>Firma y Timbre Responsable", style_body)]
+            [Paragraph("<b>Especialista Responsable:</b><br/><br/><br/><b>Claudio Andrés Miranda Obreque</b><br/>Instalador SEC Clase D, Est. Física", style_body),
+             Paragraph("<b>Aprobación / V° B°:</b><br/><br/><br/>___________________________________<br/>Firma y Timbre Autorizado", style_body)]
         ]
         t_sig = Table(sig_data, colWidths=[267, 267])
         t_sig.setStyle(TableStyle([
@@ -432,7 +446,7 @@ with tab2:
         ]))
         story.append(KeepTogether(t_sig))
         
-        doc.build(story)
+        doc.build(story, onFirstPage=add_footer, onLaterPages=add_footer)
         buffer.seek(0)
         return buffer.getvalue()
 
