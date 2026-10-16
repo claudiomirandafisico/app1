@@ -5,21 +5,21 @@ import plotly.graph_objects as go
 from datetime import datetime
 import io
 
-# Importaciones para generacion de PDF corporativo via ReportLab
+# Importaciones para generacion de PDF con formato de informe tecnico oficial
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 # --- CONFIGURACION DE PAGINA ---
 st.set_page_config(
-    page_title="Suite de Calculo Electrico // Ing. & Proyectos",
+    page_title="Informe Tecnico // Calculo y Verificacion Electrica",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Estilo CSS Empresarial con tipografia formal y firma fija
+# Estilo CSS de Ingenieria / Tecnico Profesional
 st.markdown("""
 <style>
     .stApp {
@@ -34,7 +34,7 @@ st.markdown("""
     div[data-testid="stMetric"] {
         background-color: #FFFFFF;
         border: 1px solid #CBD5E1;
-        border-top: 3px solid #2563EB;
+        border-top: 3px solid #1E293B;
         padding: 12px 16px;
         border-radius: 2px;
     }
@@ -70,7 +70,7 @@ st.markdown("""
     .stTabs [aria-selected="true"] {
         background-color: #FFFFFF;
         color: #0F172A;
-        border-top: 3px solid #2563EB;
+        border-top: 3px solid #1E293B;
     }
     h1, h2, h3, h4 {
         font-family: 'Inter', sans-serif;
@@ -81,7 +81,7 @@ st.markdown("""
         margin-top: 30px;
         padding: 12px;
         background-color: #F8FAFC;
-        border-left: 4px solid #2563EB;
+        border-left: 4px solid #1E293B;
         font-family: 'Inter', sans-serif;
         font-size: 0.85rem;
         color: #334155;
@@ -89,8 +89,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("ESTUDIO DE INGENIERIA ELECTRICA: CONDUCTORES Y PROTECCIONES")
-st.caption("Memoria de calculo normativa para alimentadores y circuitos de fuerza (Criterios RIC SEC / IEC 60364).")
+st.title("INFORME TECNICO DE INGENIERIA ELECTRICA")
+st.caption("Verificacion y dimensionamiento de alimentadores, caida de tension y protecciones (Normativa RIC SEC / IEC 60364).")
 
 # --- BASE DE DATOS NORMATIVA ---
 SECCIONES_MM2 = [1.5, 2.5, 4.0, 6.0, 10.0, 16.0, 25.0, 35.0, 50.0, 70.0, 95.0, 120.0, 150.0, 185.0, 240.0]
@@ -146,7 +146,7 @@ def seleccionar_itm(ib_diseno):
 
 # --- PANEL LATERAL DE ENTRADA ---
 st.sidebar.header("DATOS DEL CIRCUITO")
-id_circuito = st.sidebar.text_input("Identificador de Tag", value="ALIM-GENERAL-01")
+id_circuito = st.sidebar.text_input("Identificador de Tag / Instancia", value="ALIM-GENERAL-01")
 sistema = st.sidebar.selectbox("Sistema Electrico", ["Trifasico (380 V / 400 V)", "Monofasico (220 V / Fase-Neutro)"])
 
 tension_def = 380.0 if "Trifasico" in sistema else 220.0
@@ -233,7 +233,6 @@ dv_v_opt = fila_optima["dV [V]"]
 dv_pct_opt = fila_optima["dV [%]"]
 p_loss_opt = fila_optima["Perdida [W]"]
 
-# Layout de Plotly con colores corporativos diferenciados y alta legibilidad
 CORP_LAYOUT = dict(
     template="plotly_white",
     paper_bgcolor="#FFFFFF",
@@ -245,7 +244,7 @@ CORP_LAYOUT = dict(
 )
 
 # --- PESTAÑAS DE INGENIERIA ---
-tab1, tab2 = st.tabs(["01 // ANALISIS Y DIMENSIONAMIENTO", "02 // MEMORIA DE CALCULO Y EXPORTACION PDF"])
+tab1, tab2 = st.tabs(["01 // ANALISIS Y DIMENSIONAMIENTO", "02 // INFORME TECNICO OFICIAL Y EXPORTACION PDF"])
 
 with tab1:
     m1, m2, m3, m4, m5 = st.columns(5)
@@ -259,14 +258,11 @@ with tab1:
 
     col_g1, col_g2 = st.columns(2)
     with col_g1:
-        # Gráfico 1: Curvas de caída de tensión diferenciadas por color para fácil interpretación
         dist_arr = np.linspace(1.0, max(longitud_m * 1.5, 40.0), 100)
         fig_dv = go.Figure()
         idx_opt = SECCIONES_MM2.index(s_optima)
         indices_plot = sorted(list(set([max(0, idx_opt - 1), idx_opt, min(len(SECCIONES_MM2) - 1, idx_opt + 1)])))
-        
-        # Colores diferenciados de alto contraste para las curvas
-        colores_curvas = ["#D97706", "#2563EB", "#059669"] 
+        colores_curvas = ["#D97706", "#1E293B", "#059669"] 
         
         for c_i, s_idx in enumerate(indices_plot):
             sec_eval = SECCIONES_MM2[s_idx]
@@ -284,12 +280,9 @@ with tab1:
         st.plotly_chart(fig_dv, use_container_width=True)
 
     with col_g2:
-        # Gráfico 2: Barras de ampacidad coloreadas individualmente para lectura rápida
         df_sub = df_secciones.iloc[max(0, idx_opt - 3):min(len(SECCIONES_MM2), idx_opt + 4)]
         fig_sec = go.Figure()
-        
-        # Colores vibrantes según estado y selección
-        colores_barras = ["#2563EB" if s == s_optima else ("#E11D48" if est == "RECHAZADO" else "#3B82F6") 
+        colores_barras = ["#1E293B" if s == s_optima else ("#E11D48" if est == "RECHAZADO" else "#3B82F6") 
                           for s, est in zip(df_sub["Seccion [mm2]"], df_sub["Estado"])]
 
         fig_sec.add_trace(go.Bar(
@@ -309,12 +302,13 @@ with tab1:
     st.dataframe(df_secciones.style.format({"Seccion [mm2]": "{:.1f}", "I_Z Base [A]": "{:.1f}", "I_Z' Corr [A]": "{:.1f}", "dV [V]": "{:.2f}", "dV [%]": "{:.2f}", "Perdida [W]": "{:.1f}"}), use_container_width=True, hide_index=True, height=260)
 
 with tab2:
-    st.subheader("Generacion y Exportacion de Memoria de Calculo en PDF")
-    st.markdown("Genera un documento formal corporativo con membrete institucional, tablas técnicas y diseño ejecutivo en PDF.")
+    st.subheader("Generacion y Exportacion de Informe Tecnico Oficial en PDF")
+    st.markdown("Genera un documento formal bajo estructura de informe técnico de ensayo e ingeniería (estilo institucional normativo).")
 
     fecha_emision = datetime.now().strftime("%Y-%m-%d %H:%M")
+    n_informe = f"IE-{datetime.now().strftime('%Y%m%d')}-01"
 
-    def generar_pdf_corporativo():
+    def generar_pdf_informe_tecnico():
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer,
@@ -325,74 +319,129 @@ with tab2:
         
         styles = getSampleStyleSheet()
         
-        style_title = ParagraphStyle('DocTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=14, leading=16, textColor=colors.HexColor('#0F172A'), alignment=TA_LEFT)
-        style_subtitle = ParagraphStyle('DocSubtitle', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=11, textColor=colors.HexColor('#475569'), alignment=TA_LEFT)
-        style_heading = ParagraphStyle('SecHeading', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=13, textColor=colors.HexColor('#1E293B'), spaceBefore=10, spaceAfter=4)
-        style_body = ParagraphStyle('DocBody', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11.5, textColor=colors.HexColor('#0F172A'))
-        style_table_text = ParagraphStyle('TableText', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, textColor=colors.HexColor('#0F172A'))
-        style_table_header = ParagraphStyle('TableHeader', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.white, alignment=TA_CENTER)
+        style_header_title = ParagraphStyle('HeaderTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#0F172A'), alignment=TA_LEFT)
+        style_header_meta = ParagraphStyle('HeaderMeta', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11, textColor=colors.HexColor('#475569'), alignment=TA_RIGHT)
+        style_heading = ParagraphStyle('SecHeading', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9.5, leading=12, textColor=colors.HexColor('#1E293B'), spaceBefore=8, spaceAfter=4)
+        style_body = ParagraphStyle('DocBody', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=11, textColor=colors.HexColor('#0F172A'))
+        style_table_text = ParagraphStyle('TableText', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, leading=9.5, textColor=colors.HexColor('#0F172A'))
+        style_table_header = ParagraphStyle('TableHeader', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=7.5, leading=9.5, textColor=colors.white, alignment=TA_CENTER)
+        style_obs = ParagraphStyle('ObsText', parent=styles['Normal'], fontName='Helvetica-Oblique', fontSize=7.5, leading=10, textColor=colors.HexColor('#334155'))
         
         story = []
         
-        story.append(Paragraph("MEMORIA DE CALCULO ELECTRICO", style_title))
-        story.append(Paragraph(f"TAG: {id_circuito} &nbsp;&nbsp;|&nbsp;&nbsp; Emision: {fecha_emision} &nbsp;&nbsp;|&nbsp;&nbsp; Normativa: RIC SEC / IEC 60364", style_subtitle))
-        story.append(Spacer(1, 8))
-        story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=8))
+        # Bloque de Encabezado Institucional / Membrete Técnico
+        header_data = [
+            [Paragraph("<b>INFORME TECNICO DE VERIFICACION ELECTRICA</b>", style_header_title), 
+             Paragraph(f"<b>N° de Informe:</b> {n_informe}<br/><b>Fecha Emision:</b> {fecha_emision}", style_header_meta)]
+        ]
+        t_header = Table(header_data, colWidths=[310, 224])
+        t_header.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(t_header)
+        story.append(Spacer(1, 4))
+        story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=6))
         
-        story.append(Paragraph("1. PARAMETROS DE DISEÑO Y CONDICIONES DE OPERACION", style_heading))
+        # Bloque de Identificación y Metadatos del Solicitante / Proyecto
+        story.append(Paragraph("<b>1. IDENTIFICACION DEL PROYECTO Y SOLICITUD</b>", style_heading))
+        data_id = [
+            [Paragraph("<b>Identificador / Tag:</b>", style_body), Paragraph(id_circuito, style_body), Paragraph("<b>Normativa Aplicada:</b>", style_body), Paragraph("RIC SEC / IEC 60364", style_body)],
+            [Paragraph("<b>Especialista Responsable:</b>", style_body), Paragraph("Claudio Andrés Miranda Obreque", style_body), Paragraph("<b>Calificacion:</b>", style_body), Paragraph("Instalador SEC Clase D, Est. Física", style_body)],
+        ]
+        t_id = Table(data_id, colWidths=[120, 150, 110, 154])
+        t_id.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
+        ]))
+        story.append(t_id)
+        story.append(Spacer(1, 6))
+        
+        # Bloque de Parámetros Operacionales
+        story.append(Paragraph("<b>2. PARAMETROS DE DISEÑO Y OPERACION</b>", style_heading))
         data_params = [
             [Paragraph("<b>Sistema Electrico:</b>", style_body), Paragraph(sistema, style_body), Paragraph("<b>Tension Nominal:</b>", style_body), Paragraph(f"{tension_v:.1f} V", style_body)],
             [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(f"{potencia_w/1000.0:.2f} kW", style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
             [Paragraph("<b>Corriente Empleo (I_B):</b>", style_body), Paragraph(f"{ib:.2f} A", style_body), Paragraph("<b>Corriente Diseño (I_d):</b>", style_body), Paragraph(f"{id_diseno:.2f} A", style_body)],
             [Paragraph("<b>Longitud Canalizacion:</b>", style_body), Paragraph(f"{longitud_m:.1f} m", style_body), Paragraph("<b>Material Conductor:</b>", style_body), Paragraph(f"{material} ({temp_aislacion})", style_body)],
         ]
-        t_params = Table(data_params, colWidths=[110, 160, 110, 160])
+        t_params = Table(data_params, colWidths=[120, 150, 110, 154])
         t_params.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
             ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
             ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
         ]))
         story.append(t_params)
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 6))
         
-        story.append(Paragraph("2. RESULTADOS DE SELECCION Y VERIFICACION NORMATIVA", style_heading))
+        # Bloque de Resultados del Ensayo / Cálculo
+        story.append(Paragraph("<b>3. RESULTADOS DE VERIFICACION Y DIMENSIONAMIENTO</b>", style_heading))
         data_results = [
-            [Paragraph("<b>Parametro Tecnico</b>", style_table_header), Paragraph("<b>Valor Obtenido</b>", style_table_header), Paragraph("<b>Criterio / Estatus</b>", style_table_header)],
+            [Paragraph("<b>Parametro Tecnico Evaluado</b>", style_table_header), Paragraph("<b>Valor Obtenido</b>", style_table_header), Paragraph("<b>Criterio / Estatus Normativo</b>", style_table_header)],
             [Paragraph("Calibre de Proteccion (I_n)", style_table_text), Paragraph(f"{in_itm} A ({curva_itm})", style_table_text), Paragraph("Conforme (I_n >= I_d)", style_table_text)],
             [Paragraph("Seccion Nominal Conductor (S)", style_table_text), Paragraph(f"{s_optima} mm²", style_table_text), Paragraph(estado_proyecto, style_table_text)],
             [Paragraph("Ampacidad Corregida (I_Z')", style_table_text), Paragraph(f"{iz_optima:.2f} A", style_table_text), Paragraph("Conforme (I_Z' >= I_n)", style_table_text)],
-            [Paragraph("Caida de Tension en Linea (dV)", style_table_text), Paragraph(f"{dv_v_opt:.2f} V ({dv_pct_opt:.2f} %)", style_table_text), Paragraph(f"Conforme (Max {dv_max_pct}%)", style_table_text)],
-            [Paragraph("Perdidas por Efecto Joule", style_table_text), Paragraph(f"{p_loss_opt:.1f} W", style_table_text), Paragraph("Regimen Permanente", style_table_text)]
+            [Paragraph("Caida de Tension en Linea (dV)", style_table_text), Paragraph(f"{dv_v_opt:.2f} V ({dv_pct_opt:.2f} %)", style_table_text), Paragraph(f"Conforme (Max admisible {dv_max_pct}%)", style_table_text)],
+            [Paragraph("Perdidas por Efecto Joule", style_table_text), Paragraph(f"{p_loss_opt:.1f} W", style_table_text), Paragraph("Regimen Permanente Admisible", style_table_text)]
         ]
-        t_results = Table(data_results, colWidths=[180, 140, 220])
+        t_results = Table(data_results, colWidths=[180, 140, 214])
         t_results.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0F172A')),
-            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#0F172A')),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1E293B')),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#1E293B')),
             ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-            ('TOPPADDING', (0,0), (-1,-1), 5),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
         ]))
         story.append(t_results)
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 6))
         
-        story.append(Paragraph("<b>NOTA TECNICA:</b> Este calculo verifica la capacidad térmica de transporte de corriente y la caída de tensión máxima admisible según los requerimientos de seguridad de las instalaciones de consumo en baja tensión.", style_body))
+        # Bloque de Observaciones Asociadas al Servicio / Normativa
+        story.append(Paragraph("<b>4. OBSERVACIONES ASOCIADAS AL ESTUDIO</b>", style_heading))
+        obs_text = (
+            "1. Los resultados expuestos son válidos exclusivamente para el circuito y los parámetros operacionales declarados por el mandante.<br/>"
+            "2. El dimensionamiento verifica estrictamente la capacidad térmica de transporte de corriente ($I_Z' \\ge I_n$) y la regulación de tensión máxima permitida en baja tensión.<br/>"
+            "3. Estudio desarrollado bajo los estándares de competencia técnica en instalaciones eléctricas y física aplicada."
+        )
+        t_obs = Table([[Paragraph(obs_text, style_obs)]], colWidths=[534])
+        t_obs.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(t_obs)
         story.append(Spacer(1, 10))
-        story.append(Paragraph("<b>Elaborado por:</b> Claudio Andrés Miranda Obreque", style_body))
+        
+        # Bloque de Firmas y Responsable Técnico
+        sig_data = [
+            [Paragraph("<b>Elaborado y Validado por:</b><br/><br/><br/><b>Claudio Andrés Miranda Obreque</b><br/>Instalador SEC Clase D, Est. Física", style_body),
+             Paragraph("<b>Aprobación / V° B°:</b><br/><br/><br/>___________________________________<br/>Firma y Timbre Responsable", style_body)]
+        ]
+        t_sig = Table(sig_data, colWidths=[267, 267])
+        t_sig.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+        ]))
+        story.append(KeepTogether(t_sig))
         
         doc.build(story)
         buffer.seek(0)
         return buffer.getvalue()
 
-    pdf_bytes = generar_pdf_corporativo()
+    pdf_bytes = generar_pdf_informe_tecnico()
 
     st.download_button(
-        label="📥 DESCARGAR MEMORIA DE CALCULO EN PDF (FORMATO EMPRESARIAL)",
+        label="📥 DESCARGAR INFORME TECNICO OFICIAL EN PDF",
         data=pdf_bytes,
-        file_name=f"Memoria_Calculo_{id_circuito}.pdf",
+        file_name=f"Informe_Tecnico_{id_circuito}.pdf",
         mime="application/pdf",
         use_container_width=True
     )
@@ -402,7 +451,7 @@ st.markdown(
     """
     <div class="autor-footer">
         <b>Estudio Desarrollado por:</b> Claudio Andrés Miranda Obreque<br>
-        <b>Especialidad:</b> Industrial Maintenance Technician & Certified Class D Electrical Installer.
+        <b>Especialidad:</b> Instalador SEC Clase D, Est. Física
     </div>
     """,
     unsafe_allow_html=True
