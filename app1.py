@@ -155,10 +155,14 @@ tension_v = st.sidebar.number_input("Tension Nominal [V]", value=tension_def, st
 tipo_carga = st.sidebar.selectbox("Tipo de Carga", ["Motor / Carga Inductiva (Factor 1.25)", "Alimentador General (Factor 1.00)"])
 factor_seg = 1.25 if "Motor" in tipo_carga else 1.00
 
-unidad_pot = st.sidebar.radio("Unidad de Potencia", ["Potencia Activa [kW]", "Corriente Directa [A]"])
+# Actualizacion: Unidades en kW, HP o Corriente Directa
+unidad_pot = st.sidebar.radio("Unidad de Potencia / Carga", ["Potencia Activa [kW]", "Potencia Mecanica [HP]", "Corriente Directa [A]"])
 if unidad_pot == "Potencia Activa [kW]":
-    kw_in = st.sidebar.number_input("Potencia [kW]", value=18.5, step=0.5)
+    kw_in = st.sidebar.number_input("Potencia Activa [kW]", value=18.5, step=0.5)
     potencia_w = kw_in * 1000.0
+elif unidad_pot == "Potencia Mecanica [HP]":
+    hp_in = st.sidebar.number_input("Potencia Mecanica [HP]", value=20.0, step=0.5)
+    potencia_w = hp_in * 745.7
 else:
     i_directa = st.sidebar.number_input("Corriente [A]", value=35.0, step=1.0)
 
@@ -167,7 +171,18 @@ rendimiento = st.sidebar.slider("Rendimiento (eta)", 0.60, 1.00, 0.92 if "Motor"
 
 st.sidebar.subheader("Condiciones de Instalacion")
 longitud_m = st.sidebar.number_input("Longitud de Canalizacion [m]", value=55.0, step=5.0)
-dv_max_pct = st.sidebar.selectbox("Maxima Caida Admisible [%]", [3.0, 5.0, 2.0], index=0)
+
+# Actualizacion: Porcentaje de caída automático según normativa RIC SEC
+tipo_tramo = st.sidebar.selectbox(
+    "Nivel / Tramo del Circuito (Normativa RIC)",
+    [
+        "Alimentador Principal General (Max 3.0%)",
+        "Subalimentador o Tablero Secundario (Max 3.0%)",
+        "Circuito Terminal de Alumbrado / Fuerza (Max 3.0%)",
+        "Maximo Acumulado Total (Alimentador + Terminal) (Max 5.0%)"
+    ]
+)
+dv_max_pct = 5.0 if "5.0%" in tipo_tramo else 3.0
 
 material = st.sidebar.selectbox("Material Conductor", ["Cobre", "Aluminio"])
 temp_aislacion = st.sidebar.selectbox("Aislacion", ["XLPE / EPR (90°C)", "PVC / THHN (70°C)"])
@@ -252,9 +267,9 @@ with tab1:
     m2.metric("PROTECCION (I_n)", f"{in_itm} A")
     m3.metric("SECCION SELECCIONADA", f"{s_optima} mm²")
     m4.metric("AMPACIDAD CORREGIDA", f"{iz_optima:.1f} A")
-    m5.metric("CAIDA TENSION", f"{dv_pct_opt:.2f} %")
+    m5.metric("CAIDA TENSION", f"{dv_pct_opt:.2f} % (Max {dv_max_pct}%)")
 
-    st.markdown(f"**Tag del Circuito:** `{id_circuito}` | **Estatus Normativo:** `{estado_proyecto}`")
+    st.markdown(f"**Tag del Circuito:** `{id_circuito}` | **Estatus Normativo:** `{estado_proyecto}` | **Criterio RIC Limite dV:** `{dv_max_pct}%`")
 
     col_g1, col_g2 = st.columns(2)
     with col_g1:
@@ -274,9 +289,9 @@ with tab1:
                 name=f"Calibre {sec_eval} mm² {'(SELECCIONADO)' if es_opt else ''}"
             ))
             
-        fig_dv.add_hline(y=dv_max_pct, line_dash="dash", line_color="#DC2626", annotation_text=f"Max Admisible ({dv_max_pct}%)", annotation_position="top left")
+        fig_dv.add_hline(y=dv_max_pct, line_dash="dash", line_color="#DC2626", annotation_text=f"Max Normativo RIC ({dv_max_pct}%)", annotation_position="top left")
         fig_dv.update_layout(**CORP_LAYOUT)
-        fig_dv.update_layout(title="<b>Regulacion de Tension vs. Longitud</b> (Analisis Comparativo)", xaxis_title="Distancia de Canalizacion [m]", yaxis_title="Caida de Tension dV [%]", height=380)
+        fig_dv.update_layout(title="<b>Regulacion de Tension vs. Longitud</b> (Normativa RIC SEC)", xaxis_title="Distancia de Canalizacion [m]", yaxis_title="Caida de Tension dV [%]", height=380)
         st.plotly_chart(fig_dv, use_container_width=True)
 
     with col_g2:
@@ -356,7 +371,7 @@ with tab2:
         story.append(Spacer(1, 2))
         story.append(HRFlowable(width="100%", thickness=1.2, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=4))
         
-        # Bloque de Identificación (Estilo tabla institucional de metadatos)
+        # Bloque de Identificación
         story.append(Paragraph("IDENTIFICACION DEL SOLICITANTE Y PROYECTO", style_section_title))
         data_id = [
             [Paragraph("<b>Identificador / Tag:</b>", style_body), Paragraph(id_circuito, style_body), Paragraph("<b>Normativa Aplicada:</b>", style_body), Paragraph("RIC SEC / IEC 60364", style_body)],
@@ -378,7 +393,7 @@ with tab2:
         story.append(Paragraph("PARAMETROS DE DISEÑO Y OPERACION", style_section_title))
         data_params = [
             [Paragraph("<b>Sistema Electrico:</b>", style_body), Paragraph(sistema, style_body), Paragraph("<b>Tension Nominal:</b>", style_body), Paragraph(f"{tension_v:.1f} V", style_body)],
-            [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(f"{potencia_w/1000.0:.2f} kW", style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
+            [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(f"{potencia_w/1000.0:.2f} kW ({unidad_pot})", style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
             [Paragraph("<b>Corriente Empleo (I_B):</b>", style_body), Paragraph(f"{ib:.2f} A", style_body), Paragraph("<b>Corriente Diseño (I_d):</b>", style_body), Paragraph(f"{id_diseno:.2f} A", style_body)],
             [Paragraph("<b>Longitud Canalizacion:</b>", style_body), Paragraph(f"{longitud_m:.1f} m", style_body), Paragraph("<b>Material Conductor:</b>", style_body), Paragraph(f"{material} ({temp_aislacion})", style_body)],
         ]
@@ -419,9 +434,9 @@ with tab2:
         # Observaciones Asociadas
         story.append(Paragraph("OBSERVACIONES ASOCIADAS AL SERVICIO", style_section_title))
         obs_text = (
-            "1. Los resultados expuestos son válidos exclusivamente para el circuito y los parámetros operacionales declarados.<br/>"
-            "2. El dimensionamiento verifica estrictamente la capacidad térmica de transporte de corriente y la regulación de tensión máxima permitida en baja tensión.<br/>"
-            "3. Estudio desarrollado bajo los estándares técnicos vigentes por especialista calificado."
+            f"1. Los resultados expuestos son válidos exclusivamente para el circuito y los parámetros operacionales declarados.<br/>"
+            f"2. El dimensionamiento verifica estrictamente la capacidad térmica y la regulación de tensión según normativa RIC SEC (Límite aplicado: {dv_max_pct}%).<br/>"
+            f"3. Estudio desarrollado bajo los estándares técnicos vigentes por especialista calificado."
         )
         t_obs = Table([[Paragraph(obs_text, style_obs)]], colWidths=[534])
         t_obs.setStyle(TableStyle([
