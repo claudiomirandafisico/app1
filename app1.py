@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import io
 
-# Importaciones para generacion de PDF corporativo de ingenieria via ReportLab
+# Importaciones para generacion de PDF corporativo via ReportLab
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilo CSS Empresarial (Minimalista, Sobrio y Corporativo)
+# Estilo CSS Empresarial con tipografia formal y firma fija
 st.markdown("""
 <style>
     .stApp {
@@ -34,12 +34,12 @@ st.markdown("""
     div[data-testid="stMetric"] {
         background-color: #FFFFFF;
         border: 1px solid #CBD5E1;
-        border-top: 3px solid #0F172A;
+        border-top: 3px solid #2563EB;
         padding: 12px 16px;
         border-radius: 2px;
     }
     div[data-testid="stMetricLabel"] {
-        color: #64748B;
+        color: #475569;
         font-family: 'Inter', sans-serif;
         font-size: 0.75rem;
         font-weight: 600;
@@ -76,6 +76,15 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
         color: #0F172A;
         letter-spacing: -0.01em;
+    }
+    .autor-footer {
+        margin-top: 30px;
+        padding: 12px;
+        background-color: #F8FAFC;
+        border-left: 4px solid #2563EB;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+        color: #334155;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -224,7 +233,7 @@ dv_v_opt = fila_optima["dV [V]"]
 dv_pct_opt = fila_optima["dV [%]"]
 p_loss_opt = fila_optima["Perdida [W]"]
 
-# Paleta de colores Corporativa Estricta (Plotly Layout)
+# Layout de Plotly con colores corporativos diferenciados y alta legibilidad
 CORP_LAYOUT = dict(
     template="plotly_white",
     paper_bgcolor="#FFFFFF",
@@ -250,37 +259,50 @@ with tab1:
 
     col_g1, col_g2 = st.columns(2)
     with col_g1:
+        # Gráfico 1: Curvas de caída de tensión diferenciadas por color para fácil interpretación
         dist_arr = np.linspace(1.0, max(longitud_m * 1.5, 40.0), 100)
         fig_dv = go.Figure()
         idx_opt = SECCIONES_MM2.index(s_optima)
         indices_plot = sorted(list(set([max(0, idx_opt - 1), idx_opt, min(len(SECCIONES_MM2) - 1, idx_opt + 1)])))
         
-        for s_idx in indices_plot:
+        # Colores diferenciados de alto contraste para las curvas
+        colores_curvas = ["#D97706", "#2563EB", "#059669"] 
+        
+        for c_i, s_idx in enumerate(indices_plot):
             sec_eval = SECCIONES_MM2[s_idx]
             _, dv_arr_pct, _ = calcular_caida_tension(sec_eval, dist_arr, ib, tension_v, cos_phi, rho_op, reactancia_km, sistema)
             es_opt = (sec_eval == s_optima)
             fig_dv.add_trace(go.Scatter(
-                x=dist_arr, y=dv_arr_pct, mode="lines",
-                line=dict(color="#2563EB" if es_opt else "#64748B", width=2.5 if es_opt else 1.2, dash="solid" if es_opt else "dot"),
-                name=f"{sec_eval} mm²"
+                x=dist_arr, y=dv_arr_pct, mode="lines+markers" if es_opt else "lines",
+                line=dict(color=colores_curvas[c_i], width=3.0 if es_opt else 1.5, dash="solid" if es_opt else "dot"),
+                name=f"Calibre {sec_eval} mm² {'(SELECCIONADO)' if es_opt else ''}"
             ))
-        fig_dv.add_hline(y=dv_max_pct, line_dash="dash", line_color="#DC2626", annotation_text=f"Max Admisible ({dv_max_pct}%)")
+            
+        fig_dv.add_hline(y=dv_max_pct, line_dash="dash", line_color="#DC2626", annotation_text=f"Max Admisible ({dv_max_pct}%)", annotation_position="top left")
         fig_dv.update_layout(**CORP_LAYOUT)
-        fig_dv.update_layout(title="Regulacion de Tension vs. Longitud de Canalizacion", xaxis_title="Distancia [m]", yaxis_title="Caida dV [%]", height=380)
+        fig_dv.update_layout(title="<b>Regulacion de Tension vs. Longitud</b> (Analisis Comparativo)", xaxis_title="Distancia de Canalizacion [m]", yaxis_title="Caida de Tension dV [%]", height=380)
         st.plotly_chart(fig_dv, use_container_width=True)
 
     with col_g2:
+        # Gráfico 2: Barras de ampacidad coloreadas individualmente para lectura rápida
         df_sub = df_secciones.iloc[max(0, idx_opt - 3):min(len(SECCIONES_MM2), idx_opt + 4)]
         fig_sec = go.Figure()
+        
+        # Colores vibrantes según estado y selección
+        colores_barras = ["#2563EB" if s == s_optima else ("#E11D48" if est == "RECHAZADO" else "#3B82F6") 
+                          for s, est in zip(df_sub["Seccion [mm2]"], df_sub["Estado"])]
+
         fig_sec.add_trace(go.Bar(
             x=[f"{s} mm²" for s in df_sub["Seccion [mm2]"]],
             y=df_sub["I_Z' Corr [A]"],
-            marker_color=["#2563EB" if s == s_optima else "#94A3B8" for s in df_sub["Seccion [mm2]"]],
-            marker_line_color="#0F172A", marker_line_width=1.0
+            marker_color=colores_barras,
+            marker_line_color="#0F172A", marker_line_width=1.2,
+            text=[f"{val:.1f} A" for val in df_sub["I_Z' Corr [A]"]],
+            textposition="auto"
         ))
-        fig_sec.add_hline(y=in_itm, line_dash="dash", line_color="#DC2626", annotation_text=f"Proteccion I_n = {in_itm} A")
+        fig_sec.add_hline(y=in_itm, line_dash="dash", line_color="#DC2626", annotation_text=f"Proteccion I_n = {in_itm} A", annotation_position="top right")
         fig_sec.update_layout(**CORP_LAYOUT)
-        fig_sec.update_layout(title="Ampacidad Admisible Corregida (I_Z') por Calibre", xaxis_title="Seccion Nominal", yaxis_title="Corriente [A]", height=380, showlegend=False)
+        fig_sec.update_layout(title="<b>Capacidad de Ampacidad Corregida (I_Z') por Calibre</b>", xaxis_title="Seccion Nominal", yaxis_title="Corriente Admisible [A]", height=380, showlegend=False)
         st.plotly_chart(fig_sec, use_container_width=True)
 
     st.markdown("#### Matriz de Verificacion Normativa")
@@ -292,7 +314,6 @@ with tab2:
 
     fecha_emision = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # Funcion generadora de PDF Empresarial usando ReportLab
     def generar_pdf_corporativo():
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -304,7 +325,6 @@ with tab2:
         
         styles = getSampleStyleSheet()
         
-        # Estilos corporativos formales
         style_title = ParagraphStyle('DocTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=14, leading=16, textColor=colors.HexColor('#0F172A'), alignment=TA_LEFT)
         style_subtitle = ParagraphStyle('DocSubtitle', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=11, textColor=colors.HexColor('#475569'), alignment=TA_LEFT)
         style_heading = ParagraphStyle('SecHeading', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=13, textColor=colors.HexColor('#1E293B'), spaceBefore=10, spaceAfter=4)
@@ -314,13 +334,11 @@ with tab2:
         
         story = []
         
-        # Cabecera corporativa
         story.append(Paragraph("MEMORIA DE CALCULO ELECTRICO", style_title))
         story.append(Paragraph(f"TAG: {id_circuito} &nbsp;&nbsp;|&nbsp;&nbsp; Emision: {fecha_emision} &nbsp;&nbsp;|&nbsp;&nbsp; Normativa: RIC SEC / IEC 60364", style_subtitle))
         story.append(Spacer(1, 8))
         story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=8))
         
-        # Seccion 1: Parametros
         story.append(Paragraph("1. PARAMETROS DE DISEÑO Y CONDICIONES DE OPERACION", style_heading))
         data_params = [
             [Paragraph("<b>Sistema Electrico:</b>", style_body), Paragraph(sistema, style_body), Paragraph("<b>Tension Nominal:</b>", style_body), Paragraph(f"{tension_v:.1f} V", style_body)],
@@ -340,7 +358,6 @@ with tab2:
         story.append(t_params)
         story.append(Spacer(1, 8))
         
-        # Seccion 2: Resultados
         story.append(Paragraph("2. RESULTADOS DE SELECCION Y VERIFICACION NORMATIVA", style_heading))
         data_results = [
             [Paragraph("<b>Parametro Tecnico</b>", style_table_header), Paragraph("<b>Valor Obtenido</b>", style_table_header), Paragraph("<b>Criterio / Estatus</b>", style_table_header)],
@@ -362,8 +379,9 @@ with tab2:
         story.append(t_results)
         story.append(Spacer(1, 12))
         
-        # Pie de firma
         story.append(Paragraph("<b>NOTA TECNICA:</b> Este calculo verifica la capacidad térmica de transporte de corriente y la caída de tensión máxima admisible según los requerimientos de seguridad de las instalaciones de consumo en baja tensión.", style_body))
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("<b>Elaborado por:</b> Claudio Andrés Miranda Obreque", style_body))
         
         doc.build(story)
         buffer.seek(0)
@@ -378,3 +396,14 @@ with tab2:
         mime="application/pdf",
         use_container_width=True
     )
+
+# --- FIRMA / AUTOR PERMANENTE ---
+st.markdown(
+    """
+    <div class="autor-footer">
+        <b>Estudio Desarrollado por:</b> Claudio Andrés Miranda Obreque<br>
+        <b>Especialidad:</b> Industrial Maintenance Technician & Certified Class D Electrical Installer.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
