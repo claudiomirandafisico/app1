@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import io
 
-# Importaciones para generacion de PDF con formato de informe tecnico oficial estilo Dictuc
+# Importaciones para generacion de PDF con formato de informe tecnico oficial
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
@@ -303,7 +303,7 @@ with tab1:
 
 with tab2:
     st.subheader("Generacion y Exportacion de Informe Tecnico Oficial en PDF")
-    st.markdown("Genera un documento formal bajo estructura de informe técnico de ensayo e ingeniería (estilo institucional normativo).")
+    st.markdown("Genera un documento formal bajo estructura estricta de informe de ensayo e ingeniería institucional.")
 
     fecha_emision = datetime.now().strftime("%Y-%m-%d %H:%M")
     n_informe = f"IE-{datetime.now().strftime('%Y%m%d')}-01"
@@ -312,7 +312,6 @@ with tab2:
     def generar_pdf_informe_tecnico():
         buffer = io.BytesIO()
         
-        # Funcion personalizada de canvas para el pie de pagina estilo Dictuc
         def add_footer(canvas, doc):
             canvas.saveState()
             canvas.setFont('Helvetica', 7.5)
@@ -333,32 +332,32 @@ with tab2:
         
         styles = getSampleStyleSheet()
         
-        style_header_title = ParagraphStyle('HeaderTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor('#0F172A'), alignment=TA_LEFT)
-        style_header_meta = ParagraphStyle('HeaderMeta', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11, textColor=colors.HexColor('#475569'), alignment=TA_RIGHT)
-        style_heading = ParagraphStyle('SecHeading', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9, leading=12, textColor=colors.white, spaceBefore=4, spaceAfter=4)
-        style_body = ParagraphStyle('DocBody', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=11, textColor=colors.HexColor('#0F172A'))
+        style_header_title = ParagraphStyle('HeaderTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, leading=13, textColor=colors.HexColor('#0F172A'), alignment=TA_LEFT)
+        style_header_meta = ParagraphStyle('HeaderMeta', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, textColor=colors.HexColor('#475569'), alignment=TA_RIGHT)
+        style_section_title = ParagraphStyle('SecTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8.5, leading=11, textColor=colors.HexColor('#1E293B'), spaceBefore=6, spaceAfter=2)
+        style_body = ParagraphStyle('DocBody', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10.5, textColor=colors.HexColor('#0F172A'))
         style_table_text = ParagraphStyle('TableText', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, leading=9.5, textColor=colors.HexColor('#0F172A'))
         style_table_header = ParagraphStyle('TableHeader', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=7.5, leading=9.5, textColor=colors.white, alignment=TA_CENTER)
         style_obs = ParagraphStyle('ObsText', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, leading=10, textColor=colors.HexColor('#334155'))
         
         story = []
         
-        # Bloque de Encabezado Institucional / Membrete Técnico
+        # Cabecera formal tipo reporte técnico oficial
         header_data = [
             [Paragraph("<b>INFORME TECNICO DE VERIFICACION ELECTRICA</b>", style_header_title), 
              Paragraph(f"<b>N° de Informe:</b> {n_informe}<br/><b>Fecha Emision:</b> {fecha_emision}", style_header_meta)]
         ]
-        t_header = Table(header_data, colWidths=[310, 224])
+        t_header = Table(header_data, colWidths=[330, 204])
         t_header.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
         ]))
         story.append(t_header)
-        story.append(Spacer(1, 4))
-        story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=6))
+        story.append(Spacer(1, 2))
+        story.append(HRFlowable(width="100%", thickness=1.2, color=colors.HexColor('#0F172A'), spaceBefore=2, spaceAfter=4))
         
-        # Identificación del Proyecto (Estilo tabla de metadatos de ensayo)
-        story.append(Paragraph("<b>IDENTIFICACION DEL SOLICITANTE Y PROYECTO</b>", ParagraphStyle('SecBox', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
+        # Bloque de Identificación (Estilo tabla institucional de metadatos)
+        story.append(Paragraph("IDENTIFICACION DEL SOLICITANTE Y PROYECTO", style_section_title))
         data_id = [
             [Paragraph("<b>Identificador / Tag:</b>", style_body), Paragraph(id_circuito, style_body), Paragraph("<b>Normativa Aplicada:</b>", style_body), Paragraph("RIC SEC / IEC 60364", style_body)],
             [Paragraph("<b>Especialista Responsable:</b>", style_body), Paragraph("Claudio Andrés Miranda Obreque", style_body), Paragraph("<b>Calificacion:</b>", style_body), Paragraph("Instalador SEC Clase D, Est. Física", style_body)],
@@ -369,14 +368,14 @@ with tab2:
             ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
             ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-            ('TOPPADDING', (0,0), (-1,-1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
+            ('TOPPADDING', (0,0), (-1,-1), 2.5),
         ]))
         story.append(t_id)
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 4))
         
-        # Parámetros Operacionales
-        story.append(Paragraph("<b>PARAMETROS DE DISEÑO Y OPERACION</b>", ParagraphStyle('SecBox2', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
+        # Parámetros de Operación
+        story.append(Paragraph("PARAMETROS DE DISEÑO Y OPERACION", style_section_title))
         data_params = [
             [Paragraph("<b>Sistema Electrico:</b>", style_body), Paragraph(sistema, style_body), Paragraph("<b>Tension Nominal:</b>", style_body), Paragraph(f"{tension_v:.1f} V", style_body)],
             [Paragraph("<b>Potencia / Carga:</b>", style_body), Paragraph(f"{potencia_w/1000.0:.2f} kW", style_body), Paragraph("<b>Factor de Potencia:</b>", style_body), Paragraph(f"{cos_phi:.2f}", style_body)],
@@ -389,14 +388,14 @@ with tab2:
             ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
             ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-            ('TOPPADDING', (0,0), (-1,-1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
+            ('TOPPADDING', (0,0), (-1,-1), 2.5),
         ]))
         story.append(t_params)
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 4))
         
         # Resultados de Verificación
-        story.append(Paragraph("<b>RESULTADOS DE VERIFICACION Y DIMENSIONAMIENTO TECNICO</b>", ParagraphStyle('SecBox3', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
+        story.append(Paragraph("RESULTADOS DE VERIFICACION Y DIMENSIONAMIENTO TECNICO", style_section_title))
         data_results = [
             [Paragraph("<b>Parametro Tecnico Evaluado</b>", style_table_header), Paragraph("<b>Valor Obtenido</b>", style_table_header), Paragraph("<b>Criterio / Estatus Normativo</b>", style_table_header)],
             [Paragraph("Calibre de Proteccion (I_n)", style_table_text), Paragraph(f"{in_itm} A ({curva_itm})", style_table_text), Paragraph("Conforme (I_n >= I_d)", style_table_text)],
@@ -407,32 +406,32 @@ with tab2:
         ]
         t_results = Table(data_results, colWidths=[180, 140, 214])
         t_results.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1E293B')),
-            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#1E293B')),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0F172A')),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#0F172A')),
             ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
         ]))
         story.append(t_results)
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 4))
         
-        # Observaciones Asociadas al Servicio
-        story.append(Paragraph("<b>OBSERVACIONES ASOCIADAS AL SERVICIO</b>", ParagraphStyle('SecBox4', parent=style_heading, textColor=colors.HexColor('#0F172A'), fontName='Helvetica-Bold')))
+        # Observaciones Asociadas
+        story.append(Paragraph("OBSERVACIONES ASOCIADAS AL SERVICIO", style_section_title))
         obs_text = (
             "1. Los resultados expuestos son válidos exclusivamente para el circuito y los parámetros operacionales declarados.<br/>"
-            "2. El dimensionamiento verifica estrictamente la capacidad térmica de transporte de corriente ($I_Z' \\ge I_n$) y la regulación de tensión máxima permitida en baja tensión.<br/>"
+            "2. El dimensionamiento verifica estrictamente la capacidad térmica de transporte de corriente y la regulación de tensión máxima permitida en baja tensión.<br/>"
             "3. Estudio desarrollado bajo los estándares técnicos vigentes por especialista calificado."
         )
         t_obs = Table([[Paragraph(obs_text, style_obs)]], colWidths=[534])
         t_obs.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
             ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
         ]))
         story.append(t_obs)
-        story.append(Spacer(1, 10))
+        story.append(Spacer(1, 8))
         
         # Firmas y Responsable
         sig_data = [
@@ -442,7 +441,7 @@ with tab2:
         t_sig = Table(sig_data, colWidths=[267, 267])
         t_sig.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING', (0,0), (-1,-1), 2),
         ]))
         story.append(KeepTogether(t_sig))
         
